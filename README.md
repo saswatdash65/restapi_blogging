@@ -22,3 +22,5 @@ Run the following commands to clone and run the server in local environment
     cd build
     make
     ./blog_server
+
+**Note:** This branch in development phase
