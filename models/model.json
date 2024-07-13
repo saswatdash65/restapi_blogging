@@ -1,0 +1,39 @@
+{
+    "rdbms": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "dbname": "blogweb",
+    "schema": "public",
+    "user": "",
+    "password": "",
+    "tables": ["users", "articles"],
+    "convert": {
+      "enabled": true,
+      "items":[{
+          "table": "users",
+          "column": "password",
+          "method": {
+            "before_db_write": "encrypt_password"
+          },
+          "includes": [
+            "\"encrypts.h\""
+          ]
+      }]
+    },
+    "relationships": {
+        "enabled": true,
+        "items": [{
+                "type":"has one",
+                "original_table_name": "users",
+                "original_table_alias": "user",
+                "original_key": "authorId",
+                "target_table_name": "articles",
+                "target_table_alias": "article",
+                "target_key": "id",
+                "enable_reverse": true
+            }]
+    },
+    "restful_api_controllers": {
+        "enabled": false
+    }
+}
