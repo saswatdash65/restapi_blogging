@@ -1,6 +1,5 @@
 #include "routes_BlogRouter.h"
 #include "Articles.h"
-#include "Users.h"
 #include <json/json.h>
 #include <drogon/orm/Mapper.h>
 #include <drogon/orm/DbClient.h>
@@ -22,6 +21,7 @@ void BlogRouter::get_bulk(const HttpRequestPtr &req,
         for (const Articles &article : articles) 
             posts.append(article.toJson());
         HttpResponsePtr res;
+        res->setStatusCode(drogon::k200OK);
         callback(res->newHttpJsonResponse(posts));
     }, (const exception &e) -> {
         LOG_ERROR << e.what();
@@ -45,6 +45,7 @@ void BlogRouter::get_post(const HttpRequestPtr &req,
     }
 
     HttpResponsePtr res;
+    res->setStatusCode(drogon::k200OK);
     callback(res->newHttpJsonResponse(post.toJson()));
 }
 
@@ -69,6 +70,7 @@ void BlogRouter::post_blog(const HttpRequestPtr &req,
         Json::Value message;
         message["id"] = post.getAuthorid();
         HttpResponsePtr res;
+        res->setStatusCode(drogon::k201Created);
         callback(res->newHttpJsonResponse(message));
     }, [](const exception &e) {
         LOG_ERROR << e.what();
@@ -102,6 +104,7 @@ void BlogRouter::update_blog(const HttpRequestPtr &req,
     updated_["title"].asString, updated_["content"].asString);
 
     HttpResponsePtr res;
+    res->setStatusCode(drogon::k201Created);
     res->setContentTypeCodeAndCustomString(drogon::CT_TEXT_PLAIN, "updated post")
     callback(res)
 }
