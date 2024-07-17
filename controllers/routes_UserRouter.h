@@ -11,11 +11,6 @@ namespace api
   {
     namespace user
     {
-      struct User {
-        string name;
-        string email;
-        string password;
-      };
 
       class UserRouter : public drogon::HttpController<UserRouter>
       {
@@ -26,9 +21,9 @@ namespace api
           METHOD_LIST_END
 
           void newUser(const HttpRequestPtr &req,
-                      function<void (const HttpResponsePtr &res)> &&callback) const;
+                      function<void (const HttpResponsePtr &)> &&callback) const;
           void login(const HttpRequestPtr &req,
-                      function<void (const HttpResponsePtr &res)> &&callback) const;
+                      function<void (const HttpResponsePtr &)> &&callback) const;
       };
     }
   }
