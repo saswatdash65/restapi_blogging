@@ -5,6 +5,6 @@ using namespace std;
 
 namespace drogon_model {
     namespace blogweb {
-        void encrypt_password(shared_ptr<string> &password);
+        string encrypt_password(shared_ptr<string> &password);
     }
 }

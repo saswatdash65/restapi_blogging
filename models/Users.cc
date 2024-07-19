@@ -849,7 +849,7 @@ Articles Users::getArticle(const DbClientPtr &clientPtr) const {
     Result r(nullptr);
     {
         auto binder = *clientPtr << sql;
-        binder << *authorid_ << Mode::Blocking >>
+        binder << *id_ << Mode::Blocking >>
             [&r](const Result &result) { r = result; };
         binder.exec();
     }
@@ -870,7 +870,7 @@ void Users::getArticle(const DbClientPtr &clientPtr,
 {
     static const std::string sql = "select * from articles where id = $1";
     *clientPtr << sql
-               << *authorid_
+               << *id_
                >> [rcb = std::move(rcb), ecb](const Result &r){
                     if (r.size() == 0)
                     {

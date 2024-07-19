@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void drogon_model::blogweb::encrypt_password(shared_ptr<string> &password) {
+string drogon_model::blogweb::encrypt_password(shared_ptr<string> &password) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
@@ -17,4 +17,5 @@ void drogon_model::blogweb::encrypt_password(shared_ptr<string> &password) {
         ss << hex << setw(2) << setfill('0') << static_cast<int>(hash[i]);
 
     *password = ss.str();
+    return *password;
 }

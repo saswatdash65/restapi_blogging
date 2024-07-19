@@ -3,13 +3,21 @@
 #include <json/json.h>
 #include <drogon/orm/Mapper.h>
 #include <drogon/orm/DbClient.h>
-#include <trantor/utils/Logger.h>
 #include <vector>
 
 using namespace api::v1::blog;
 using namespace std;
 using namespace drogon_model::blogweb;
 using namespace drogon::orm;
+
+void handleErrorResponce(HttpStatusCode code, const string &error,
+                        AdviceCallback callback) {
+    HttpResponsePtr res;
+    res->setStatusCode(code);
+    Json::Value error_resp;
+    error_resp["error"] = error;
+    callback(res->newHttpJsonResponse(error_resp));
+}
 
 void BlogRouter::get_bulk(const HttpRequestPtr &req,
                     function<void (const HttpResponsePtr &)> &&callback) const {
@@ -23,10 +31,8 @@ void BlogRouter::get_bulk(const HttpRequestPtr &req,
         HttpResponsePtr res;
         res->setStatusCode(drogon::k200OK);
         callback(res->newHttpJsonResponse(posts));
-    }, (const exception &e) -> {
-        LOG_ERROR << e.what();
-        HttpResponsePtr res;
-        callback(res->newInternalErrorResponse("Failed to fetch posts"));
+    }, [&](const DrogonDbException &e) {
+        handleErrorResponce(k500InternalServerError, "Failed to fetch posts", callback);
     });
 }
 
@@ -38,7 +44,7 @@ void BlogRouter::get_post(const HttpRequestPtr &req,
     Mapper<Articles> mp(client);
     const Articles post = mp.findOne(Criteria("id", CompareOperator::EQ, id));
 
-    if (!post) {
+    if (&post != nullptr) {
         HttpResponsePtr res;
         callback(res->newNotFoundResponse());
         return;
@@ -56,8 +62,7 @@ void BlogRouter::post_blog(const HttpRequestPtr &req,
     Json::Value blog = req->getJsonObject().get();
     blog["authorid"] = userid;
     if (userid.empty()) {
-        HttpResponsePtr res;
-        callback(res->newBadRequestResponse("No user ID provided"));
+        handleErrorResponce(k400BadRequest, "No user id provided!", callback);
         return;
     }
     userid = userid.substr(7, userid.length() - 1);
@@ -68,14 +73,12 @@ void BlogRouter::post_blog(const HttpRequestPtr &req,
 
     mp.insert(new_post, [&](const Articles post) {
         Json::Value message;
-        message["id"] = post.getAuthorid();
+        message["id"] = post.getValueOfAuthorid();
         HttpResponsePtr res;
         res->setStatusCode(drogon::k201Created);
         callback(res->newHttpJsonResponse(message));
-    }, [](const exception &e) {
-        LOG_ERROR << e.what();
-        HttpResponsePtr res;
-        callback(res->newInternalServerErrorResponse("Failed to insert post"));
+    }, [&](const DrogonDbException &e) {
+        handleErrorResponce(k500InternalServerError, "Failed to publish post", callback);
     });
 }
 
@@ -89,22 +92,21 @@ void BlogRouter::update_blog(const HttpRequestPtr &req,
     updated_["title"] = updated_post["title"].asString();
     updated_["content"] = updated_post["content"].asString();
 
-    if (userid.empty() || title.empty() || content.empty()) {
-        HttpResponsePtr res;
-        callback(res->newBadRequestResponse("Missing required fields"));
+    if (userid.empty() || updated_["title"].asString().empty() || updated_["content"].asString().empty()) {
+        handleErrorResponce(k400BadRequest, "Missing required fields", callback);
         return;
     }
 
     DbClientPtr client = drogon::app().getFastDbClient();
     Mapper<Articles> mp(client);
-    Json::Value::Members members();
+    Json::Value::Members members;
 
     mp.updateBy(updated_.getMemberNames(), 
     Criteria("authorId", CompareOperator::EQ, userid) && Criteria("id", CompareOperator::EQ, updated_post["id"].asString()),
-    updated_["title"].asString, updated_["content"].asString);
+    updated_["title"].asString(), updated_["content"].asString());
 
     HttpResponsePtr res;
     res->setStatusCode(drogon::k201Created);
-    res->setContentTypeCodeAndCustomString(drogon::CT_TEXT_PLAIN, "updated post")
-    callback(res)
+    res->setContentTypeCodeAndCustomString(drogon::CT_TEXT_PLAIN, "updated post");
+    callback(res);
 }
